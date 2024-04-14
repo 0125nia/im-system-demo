@@ -38,8 +38,6 @@ func (s *Server) ListenMsg() {
 		msg := <-s.Message
 		name := msg.userName
 
-		sendMsg := "[" + name + "]" + ": " + msg.msg
-
 		//将消息发送给除该上线用户外全部的在线User
 		s.mapLock.Lock()
 		//遍历OnlineMap,获取value即User
@@ -48,7 +46,7 @@ func (s *Server) ListenMsg() {
 			if cli.Name == name {
 				continue
 			}
-			cli.C <- sendMsg
+			cli.C <- msg.msg
 		}
 		s.mapLock.Unlock()
 	}
