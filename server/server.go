@@ -1,6 +1,7 @@
-package main
+package server
 
 import (
+	"Golang-IM-System/util"
 	"fmt"
 	"io"
 	"net"
@@ -133,7 +134,7 @@ func (s *Server) Start() {
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Ip, s.Port))
 
 	//judge err
-	if errPrint(err, "net.listen err:") {
+	if util.ErrPrint(err, "net.listen") {
 		return
 	}
 
@@ -146,19 +147,10 @@ func (s *Server) Start() {
 	for {
 		//accept
 		conn, err := listener.Accept()
-		if errPrint(err, "listener accept err") {
+		if util.ErrPrint(err, "listener accept") {
 			continue
 		}
 		//开一个协程do handler
 		go s.Handler(conn)
 	}
-}
-
-// ErrPrint judge and print err
-func errPrint(err error, output string) bool {
-	if err != nil {
-		fmt.Println(output, err)
-		return true
-	}
-	return false
 }
