@@ -17,7 +17,7 @@ type Server struct {
 	mapLock   sync.RWMutex //锁
 
 	//消息广播的channel
-	Message chan string
+	Message chan Message
 }
 
 // NewServer 创建一个server接口
@@ -26,7 +26,7 @@ func NewServer(ip string, port int) *Server {
 		Ip:        ip,
 		Port:      port,
 		OnlineMap: make(map[string]*User),
-		Message:   make(chan string),
+		Message:   make(chan Message),
 	}
 	return server
 }
@@ -35,18 +35,19 @@ func NewServer(ip string, port int) *Server {
 func (s *Server) ListenMsg() {
 	for {
 		msg := <-s.Message
+		name := msg.userName
 
-		//todo:消息格式修改 封装消息类型
-		//onlineName := msg[strings.Index(msg, "]")+1 : strings.Index(msg, ":")]
+		sendMsg := "[" + name + "]" + ": " + msg.msg
 
 		//将消息发送给除该上线用户外全部的在线User
 		s.mapLock.Lock()
-		//遍历OnlineMap,获取value
+		//遍历OnlineMap,获取value即User
 		for _, cli := range s.OnlineMap {
-			//if cli.Name == onlineName {
-			//	continue
-			//}
-			cli.C <- msg
+			//若为该用户则不发送
+			if cli.Name == name {
+				continue
+			}
+			cli.C <- sendMsg
 		}
 		s.mapLock.Unlock()
 	}
@@ -55,10 +56,8 @@ func (s *Server) ListenMsg() {
 
 // BroadCast 广播消息
 func (s *Server) BroadCast(user *User, msg string) {
-	sendMsg := "[" + user.Addr.String() + "]" + user.Name + ": " + msg
-
 	//发送到Server Message channel
-	s.Message <- sendMsg
+	s.Message <- Message{user.Name, msg}
 }
 
 // Handler 处理连接业务
