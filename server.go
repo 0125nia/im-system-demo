@@ -69,13 +69,7 @@ func (s *Server) Handler(conn net.Conn) {
 	//创建User
 	user := NewUser(conn)
 
-	//用户上线, 将用户加入到onlineMap中 (加锁)
-	s.mapLock.Lock()
-	s.OnlineMap[user.Name] = user
-	s.mapLock.Unlock()
-
-	//广播当前用户上线消息
-	s.BroadCast(user, "已上线")
+	user.Online(s)
 
 	go func() {
 		buf := make([]byte, 4096)
@@ -84,7 +78,7 @@ func (s *Server) Handler(conn net.Conn) {
 			//读取信息  n表示字节数组长度
 			n, err := conn.Read(buf)
 			if n == 0 {
-				s.BroadCast(user, "下线")
+				user.Offline(s)
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -95,7 +89,7 @@ func (s *Server) Handler(conn net.Conn) {
 			msg := string(buf[:n-1])
 
 			//将得到的消息进行广播
-			s.BroadCast(user, msg)
+			user.DoMsg(s, msg)
 		}
 	}()
 
