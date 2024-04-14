@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
-	"strings"
 	"sync"
 )
 
@@ -36,15 +36,16 @@ func (s *Server) ListenMsg() {
 	for {
 		msg := <-s.Message
 
-		onlineName := msg[strings.Index(msg, "]")+1 : strings.Index(msg, ":")]
+		//todo:消息格式修改 封装消息类型
+		//onlineName := msg[strings.Index(msg, "]")+1 : strings.Index(msg, ":")]
 
 		//将消息发送给除该上线用户外全部的在线User
 		s.mapLock.Lock()
 		//遍历OnlineMap,获取value
 		for _, cli := range s.OnlineMap {
-			if cli.Name == onlineName {
-				continue
-			}
+			//if cli.Name == onlineName {
+			//	continue
+			//}
 			cli.C <- msg
 		}
 		s.mapLock.Unlock()
@@ -75,6 +76,28 @@ func (s *Server) Handler(conn net.Conn) {
 
 	//广播当前用户上线消息
 	s.BroadCast(user, "已上线")
+
+	go func() {
+		buf := make([]byte, 4096)
+
+		for {
+			//读取信息  n表示字节数组长度
+			n, err := conn.Read(buf)
+			if n == 0 {
+				s.BroadCast(user, "下线")
+				return
+			}
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn Read err:", err)
+				return
+			}
+			//提取用户的消息(去除'\n')
+			msg := string(buf[:n-1])
+
+			//将得到的消息进行广播
+			s.BroadCast(user, msg)
+		}
+	}()
 
 	//当前handler阻塞
 	select {}
