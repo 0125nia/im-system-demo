@@ -13,6 +13,7 @@ type Client struct {
 	ServerPort int
 	Name       string
 	conn       net.Conn
+	flag       int //当前client的模式
 }
 
 // NewClient 创建客户端对象
@@ -20,6 +21,7 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client := &Client{
 		ServerIp:   serverIp,
 		ServerPort: serverPort,
+		flag:       999,
 	}
 
 	//连接Server
@@ -30,6 +32,50 @@ func NewClient(serverIp string, serverPort int) *Client {
 	client.conn = conn
 	//返回对象
 	return client
+}
+
+// menu 模式选择目录
+func (c *Client) menu() bool {
+	var f int
+	fmt.Println(">>>>>>> 1.公聊 <<<<<<<")
+	fmt.Println(">>>>>>> 2.私聊 <<<<<<<")
+	fmt.Println(">>>>>>> 3.改名 <<<<<<<")
+	fmt.Println(">>>>>>> 0.退出 <<<<<<<")
+
+	fmt.Scanln(&f)
+
+	if f >= 0 && f <= 3 {
+		c.flag = f
+		return true
+	} else {
+		fmt.Println(">>>>>>> 请输入合法范围内的数字 <<<<<<<")
+		return false
+	}
+}
+
+// Run 执行Client业务
+func (c *Client) Run() {
+	for c.flag != 0 {
+		for !c.menu() {
+
+		}
+
+		//根据不同模式处理不同业务
+		switch c.flag {
+		case 1:
+			//公聊模式
+			fmt.Println("选择公聊模式...")
+			break
+		case 2:
+			//私聊模式
+			fmt.Println("选择私聊模式...")
+			break
+		case 3:
+			//改名
+			fmt.Println("选择改名模式...")
+			break
+		}
+	}
 }
 
 var serverIp string
@@ -56,5 +102,5 @@ func main() {
 	fmt.Println(">>>>>>> 连接服务器成功 >>>>>>>")
 
 	//启动Client的业务
-	select {}
+	client.Run()
 }
