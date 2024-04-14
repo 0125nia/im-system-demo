@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 // User User类型 用户结构体
@@ -69,6 +70,24 @@ func (u *User) DoMsg(server *Server, msg string) {
 			u.SendMsg(onlineMsg)
 		}
 		server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		//消息格式 rename|zhangSan
+		newName := strings.Split(msg, "|")[1]
+
+		//判断name是否存在
+		_, ok := server.OnlineMap[newName]
+		if ok {
+			u.SendMsg("当前用户名被使用\n")
+		} else {
+			server.mapLock.Lock()
+			delete(server.OnlineMap, u.Name)
+			server.OnlineMap[newName] = u
+			server.mapLock.Unlock()
+
+			u.Name = newName
+			u.SendMsg("您已更新用户名" + u.Name + "\n")
+		}
+
 	} else {
 		server.BroadCast(u, msg)
 	}
