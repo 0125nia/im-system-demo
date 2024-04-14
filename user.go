@@ -54,9 +54,24 @@ func (u *User) Offline(server *Server) {
 	server.BroadCast(u, "下线")
 }
 
+// SendMsg 给当前User对应的客户端发送消息
+func (u *User) SendMsg(msg string) {
+	u.conn.Write([]byte(msg))
+}
+
 // DoMsg 用户处理消息的业务
 func (u *User) DoMsg(server *Server, msg string) {
-	server.BroadCast(u, msg)
+
+	if msg == "who" {
+		server.mapLock.Lock()
+		for _, user := range server.OnlineMap {
+			onlineMsg := "[" + user.Name + "]:" + "在线...\n"
+			u.SendMsg(onlineMsg)
+		}
+		server.mapLock.Unlock()
+	} else {
+		server.BroadCast(u, msg)
+	}
 }
 
 // ListenMsg 监听当前User channel的方法,一旦有消息,直接发送给对端客户端
