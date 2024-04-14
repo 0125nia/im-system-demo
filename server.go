@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -35,11 +36,15 @@ func (s *Server) ListenMsg() {
 	for {
 		msg := <-s.Message
 
-		//todo:修改成发送给除了该上线用户外的所有用户
-		//将消息发送给全部的在线User
+		onlineName := msg[strings.Index(msg, "]")+1 : strings.Index(msg, ":")]
+
+		//将消息发送给除该上线用户外全部的在线User
 		s.mapLock.Lock()
 		//遍历OnlineMap,获取value
 		for _, cli := range s.OnlineMap {
+			if cli.Name == onlineName {
+				continue
+			}
 			cli.C <- msg
 		}
 		s.mapLock.Unlock()
