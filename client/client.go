@@ -4,7 +4,9 @@ import (
 	"Golang-IM-System/util"
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 // Client 客户端对象
@@ -34,6 +36,12 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
+// DealResponse 处理server回应的消息，直接显示到标准输出即可
+func (c *Client) DealResponse() {
+	//一旦client.conn有数据，就直接copy到stdout标准输出上，永久阻塞监听
+	io.Copy(os.Stdout, c.conn)
+}
+
 // menu 模式选择目录
 func (c *Client) menu() bool {
 	var f int
@@ -51,6 +59,20 @@ func (c *Client) menu() bool {
 		fmt.Println(">>>>>>> 请输入合法范围内的数字 <<<<<<<")
 		return false
 	}
+}
+
+// UpdateName 更改用户名
+func (c *Client) UpdateName() bool {
+	fmt.Println(">>>>>>> 请输入用户名：")
+	fmt.Scanln(&c.Name)
+
+	sendMsg := "rename|" + c.Name + "\n"
+
+	_, err := c.conn.Write([]byte(sendMsg))
+	if util.ErrPrint(err, "conn.Write") {
+		return false
+	}
+	return true
 }
 
 // Run 执行Client业务
@@ -73,6 +95,7 @@ func (c *Client) Run() {
 		case 3:
 			//改名
 			fmt.Println("选择改名模式...")
+			c.UpdateName()
 			break
 		}
 	}
@@ -98,6 +121,9 @@ func main() {
 		fmt.Println(">>>>>>> 连接服务器失败 >>>>>>>")
 		return
 	}
+
+	//单独开启一个goroutine去处理server的回执消息
+	go client.DealResponse()
 
 	fmt.Println(">>>>>>> 连接服务器成功 >>>>>>>")
 
